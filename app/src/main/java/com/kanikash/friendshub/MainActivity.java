@@ -12,6 +12,8 @@ import com.kanikash.friendshub.Fragments.LoginFragment;
 
 public class MainActivity extends ActionBarActivity {
     private LoginFragment loginFragment;
+    private static final String TAG = "MainFragment";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

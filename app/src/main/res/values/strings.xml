@@ -2,6 +2,7 @@
 <resources>
 
     <string name="app_name">FriendsHub</string>
+    <string name="facebook_login">Facebook Login</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="facebook_app_id">331813253675002</string>
