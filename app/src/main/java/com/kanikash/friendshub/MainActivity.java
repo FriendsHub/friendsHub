@@ -1,17 +1,38 @@
 package com.kanikash.friendshub;
 
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+
+import com.facebook.model.GraphUser;
+import com.kanikash.friendshub.Fragments.LoginFragment;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements LoginFragment.OnScreenActivityListener {
+    private LoginFragment loginFragment;
+    private static final String TAG = "MainFragment";
+    private TextView tvWelcome;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if(savedInstanceState == null) {
+            loginFragment = new LoginFragment();
+            FragmentManager fm = getSupportFragmentManager();
+            // Begin Transaction
+            FragmentTransaction ft = fm.beginTransaction();
+            ft.add(R.id.fragment, loginFragment, "login");
+            // Commit transaction
+            ft.commit();
+        } else {
+            loginFragment = (LoginFragment) getSupportFragmentManager().findFragmentByTag("login");
+        }
+        tvWelcome = (TextView) findViewById(R.id.tvWelcome);
     }
 
 
@@ -35,5 +56,11 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void userDetails(GraphUser user) {
+        tvWelcome.setText(user.getName());
+
     }
 }
