@@ -52,6 +52,7 @@ import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
 import com.kanikash.friendshub.Fragments.ImageFragment;
+import com.kanikash.friendshub.Models.Place;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
@@ -126,9 +127,6 @@ public class MapActivity extends FragmentActivity implements
 
         config = new ImageLoaderConfiguration.Builder(this).build();
         ImageLoader.getInstance().init(config);
-        ParseObject.registerSubclass(GeoMessagePost.class);
-        Parse.initialize(getBaseContext(), "AjTb1C0eiBjw6DQYUTHQXAoGfRHuFrBMhiZdBZdn", "shoL9aMMS8luS8UkfaTvanpFJcXEcQniNKCHJwsB");
-
         if (ParseUser.getCurrentUser() != null) { // start with existing user
             startWithCurrentUser();
         } else { // If not logged in, login as a new anonymous user
@@ -141,7 +139,8 @@ public class MapActivity extends FragmentActivity implements
             public void onClick(View v) {
 //                showAlertDialogForPoint(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
 
-                Intent intent = new Intent(MapActivity.this, PostActivity.class);
+                Intent intent = new Intent(MapActivity.this, AddMomentsActivity.class);
+                //Intent intent = new Intent(MapActivity.this, PostActivity.class);
                 intent.putExtra("Location", currentLocation);
                 startActivity(intent);
 
@@ -490,16 +489,16 @@ public class MapActivity extends FragmentActivity implements
         }
         final ParseGeoPoint myPoint = geoPointFromLocation(myLoc);
         // Create the map Parse query
-        ParseQuery<GeoMessagePost> mapQuery = GeoMessagePost.getQuery();
+        ParseQuery<Place> mapQuery = Place.getQuery();
         // Set up additional query filters
         mapQuery.whereWithinKilometers("location", myPoint, MAX_POST_SEARCH_DISTANCE);
         mapQuery.include("user");
         mapQuery.orderByDescending("createdAt");
         mapQuery.setLimit(MAX_POST_SEARCH_RESULTS);
         // Kick off the query in the background
-        mapQuery.findInBackground(new FindCallback<GeoMessagePost>() {
+        mapQuery.findInBackground(new FindCallback<Place>() {
             @Override
-            public void done(List<GeoMessagePost> objects, ParseException e) {
+            public void done(List<Place> objects, ParseException e) {
                 if (e != null) {
                     if (APPDEBUG) {
                         Log.d(APPTAG, "An error occurred while querying for map posts.", e);
@@ -517,7 +516,7 @@ public class MapActivity extends FragmentActivity implements
                 // Posts to show on the map
                 Set<String> toKeep = new HashSet<String>();
                 // Loop through the results of the search
-                for (GeoMessagePost post : objects) {
+                for (Place post : objects) {
                     // Add this post to the list of map pins to keep
                     toKeep.add(post.getObjectId());
                     // Check for an existing marker for this post
@@ -545,7 +544,7 @@ public class MapActivity extends FragmentActivity implements
 //                                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
 
                         markerOpts =
-                                markerOpts.title(post.getTitle()).icon(
+                                markerOpts.title(post.getCaption()).icon(
                                         BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
 
                     } else {
@@ -560,8 +559,10 @@ public class MapActivity extends FragmentActivity implements
                             }
                         }
                         // Display a green marker with the post information
+                        String path = post.getPhotoFile().getUrl();
+                        Log.d("Path", path);
                         markerOpts =
-                                markerOpts.title(post.getTitle()).snippet(post.getUser().getUsername())
+                                markerOpts.title(post.getCaption()).snippet("Random Snippet")
                                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
                     }
                     // Add a new marker
