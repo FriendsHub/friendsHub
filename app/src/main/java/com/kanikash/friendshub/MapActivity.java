@@ -53,9 +53,12 @@ import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
 import com.kanikash.friendshub.Fragments.ImageFragment;
 import com.kanikash.friendshub.Models.Place;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
+import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.parse.FindCallback;
 import com.parse.LogInCallback;
@@ -390,30 +393,6 @@ public class MapActivity extends FragmentActivity implements
         doMapQuery();
     }
 
-    // Function to display image as the marker on the map
-    /*// Path to image file
-    final String assetPath = "file:///storage/emulated/0/DCIM//Camera/20141008_095811.jpg";
-    //File file = new File(filePath);
-    // Define color of marker icon
-    ImageSize targetSize = new ImageSize(80, 50);
-    ImageLoader.getInstance().loadImage(assetPath, targetSize, new SimpleImageLoadingListener() {
-        @Override
-        public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-            super.onLoadingComplete(imageUri, view, loadedImage);
-            BitmapDescriptor defaultMarker =
-                    BitmapDescriptorFactory.fromBitmap(loadedImage);
-            String title = ((EditText) alertDialog.findViewById(R.id.etTitle)).
-                    getText().toString();
-            String snippet = ((EditText) alertDialog.findViewById(R.id.etSnippet)).
-                    getText().toString();
-            Marker marker = map.addMarker(new MarkerOptions()
-                    .position(point)
-                    .title(assetPath)
-                    .snippet(snippet)
-                    .icon(defaultMarker)
-                    .draggable(true));
-        }
-    });*/
 
     @Override
     public boolean onMarkerClick(Marker marker) {
@@ -539,13 +518,16 @@ public class MapActivity extends FragmentActivity implements
                             }
                         }
                         // Display a red marker with a predefined title and no snippet
-//                        markerOpts =
-//                                markerOpts.title(getResources().getString(R.string.post_out_of_range)).icon(
-//                                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-
                         markerOpts =
                                 markerOpts.title(post.getCaption()).icon(
                                         BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                        // Add a new marker
+                        Marker marker = mapFragment.getMap().addMarker(markerOpts);
+                        mapMarkers.put(post.getObjectId(), marker);
+                        if (post.getObjectId().equals(selectedPostObjectId)) {
+                            marker.showInfoWindow();
+                            selectedPostObjectId = null;
+                        }
 
                     } else {
                         // Check for an existing in range marker
@@ -558,25 +540,37 @@ public class MapActivity extends FragmentActivity implements
                                 oldMarker.remove();
                             }
                         }
-                        // Display a green marker with the post information
-                        String path = post.getPhotoFile().getUrl();
-                        Log.d("Path", path);
-                        markerOpts =
-                                markerOpts.title(post.getCaption()).snippet("Random Snippet")
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-                    }
-                    // Add a new marker
-                    Marker marker = mapFragment.getMap().addMarker(markerOpts);
-                    mapMarkers.put(post.getObjectId(), marker);
-                    if (post.getObjectId().equals(selectedPostObjectId)) {
-                        marker.showInfoWindow();
-                        selectedPostObjectId = null;
+                        // Display image marker of size 80*50
+                        final String path = post.getPhotoFile().getUrl();
+                        ImageSize targetSize = new ImageSize(80, 50);
+                        ImageLoader.getInstance().loadImage(path, targetSize, imageLoadingListener(post, path));
                     }
                 }
                 // Clean up old markers.
                 cleanUpMarkers(toKeep);
             }
         });
+    }
+
+    public SimpleImageLoadingListener imageLoadingListener (final Place place, final String path) {
+        return new SimpleImageLoadingListener() {
+            @Override
+            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                super.onLoadingComplete(imageUri, view, loadedImage);
+                BitmapDescriptor defaultMarker = BitmapDescriptorFactory.fromBitmap(loadedImage);
+                MarkerOptions markerOpts = new MarkerOptions().position(new LatLng(place.getLocation().getLatitude(), place.getLocation().getLongitude()));
+                markerOpts = markerOpts.title(path)
+                                        .snippet("Random Snippet")
+                                        .icon(defaultMarker);
+                // Add a new marker
+                Marker marker = mapFragment.getMap().addMarker(markerOpts);
+                mapMarkers.put(place.getObjectId(), marker);
+                if (place.getObjectId().equals(selectedPostObjectId)) {
+                    marker.showInfoWindow();
+                    selectedPostObjectId = null;
+                }
+            }
+        };
     }
 
 }
