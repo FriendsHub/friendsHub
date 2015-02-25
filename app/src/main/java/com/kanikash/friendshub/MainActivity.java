@@ -1,5 +1,6 @@
 package com.kanikash.friendshub;
 
+import android.content.Intent;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
@@ -61,6 +62,8 @@ public class MainActivity extends ActionBarActivity implements LoginFragment.OnS
     @Override
     public void userDetails(GraphUser user) {
         tvWelcome.setText(user.getName());
-
+        // Show the Map intent
+        Intent i = new Intent(getBaseContext(), MapActivity.class);
+        startActivity(i);
     }
 }
