@@ -38,4 +38,15 @@
         android:layout_toRightOf="@+id/tvSnippet" >
     </EditText>
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Post"
+        android:id="@+id/btnPost"
+        android:layout_below="@+id/etSnippet"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="84dp"
+        android:onClick="btnPost_click"
+        />
+
 </RelativeLayout>
