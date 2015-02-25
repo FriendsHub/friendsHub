@@ -9,5 +9,6 @@
     <string name="title_activity_map">MapActivity</string>
     <string name="post">Post</string>
     <string name="title_activity_post">PostActivity</string>
+    <string name="title_activity_add_moments">AddMomentsActivity</string>
 
 </resources>

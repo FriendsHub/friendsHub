@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.facebook.HttpMethod;
 import com.facebook.Request;
 import com.facebook.Response;
 import com.facebook.Session;
@@ -44,7 +45,7 @@ public class LoginFragment extends Fragment{
         View v = inflater.inflate(R.layout.activity_login, container, false);
         LoginButton authButton = (LoginButton) v.findViewById(R.id.authButton);
         authButton.setFragment(this);
-        authButton.setReadPermissions(Arrays.asList("public_profile", "user_friends"));
+        authButton.setReadPermissions(Arrays.asList("public_profile", "user_friends", "email"));
         return v;
     }
 
@@ -105,7 +106,7 @@ public class LoginFragment extends Fragment{
         }
     }
 
-    private void onSessionStateChange(Session session, SessionState state, Exception exception) {
+    private void onSessionStateChange(final Session session, SessionState state, Exception exception) {
         if(state.isOpened()) {
             // Show the new Activity to display user information and friends
 
@@ -114,6 +115,15 @@ public class LoginFragment extends Fragment{
                 @Override
                 public void onCompleted(GraphUser graphUser, Response response) {
                     if(graphUser != null) {
+                        // Call the method to get user friends list
+                        /*new Request(session, "/me/friends", null,
+                                HttpMethod.GET,
+                                new Request.Callback() {
+                                    @Override
+                                    public void onCompleted(Response response) {
+                                        Log.i("INFO", response.toString());
+                                    }
+                                }).executeAsync();*/
                         // Call method in main activity with data
                         listener.userDetails(graphUser);
                     }

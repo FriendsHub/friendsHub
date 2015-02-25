@@ -9,6 +9,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import com.facebook.Request;
 import com.facebook.model.GraphUser;
 import com.kanikash.friendshub.Fragments.LoginFragment;
 
@@ -61,7 +62,8 @@ public class MainActivity extends ActionBarActivity implements LoginFragment.OnS
 
     @Override
     public void userDetails(GraphUser user) {
-        tvWelcome.setText(user.getName());
+        //tvWelcome.setText(user.getName());
+        tvWelcome.setText(user.getProperty("email").toString());
         // Show the Map intent
         Intent i = new Intent(getBaseContext(), MapActivity.class);
         startActivity(i);
