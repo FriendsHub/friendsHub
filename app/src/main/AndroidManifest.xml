@@ -46,6 +46,11 @@
 
         <activity android:name=".MapActivity"
             android:label="@string/title_activity_map"/>
+
+        <activity
+            android:name=".PostActivity"
+            android:label="@string/title_activity_post" >
+        </activity>
     </application>
 
 </manifest>

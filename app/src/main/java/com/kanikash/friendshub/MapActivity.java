@@ -11,7 +11,6 @@ import android.content.IntentSender;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
-import android.location.LocationListener;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.support.v4.app.DialogFragment;
@@ -32,6 +31,7 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
@@ -79,7 +79,6 @@ public class MapActivity extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
-        GoogleMap.OnMapLongClickListener,
         GoogleMap.OnMarkerClickListener,
         ClusterManager.OnClusterClickListener,
         ClusterManager.OnClusterItemClickListener{
@@ -200,8 +199,9 @@ public class MapActivity extends FragmentActivity implements
             Toast.makeText(this, "Map Fragment was loaded properly!", Toast.LENGTH_SHORT).show();
             //mClusterManager = new ClusterManager<PinItem>(this, map);
             //map.setOnMarkerClickListener(mClusterManager);
+
             map.setMyLocationEnabled(true);
-            map.setOnMapLongClickListener(this);
+            //map.setOnMapLongClickListener(this);
             map.setOnMarkerClickListener(this);
             map.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
                 @Override
@@ -216,7 +216,9 @@ public class MapActivity extends FragmentActivity implements
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this).build();
 
+
             connectClient();
+            currentLocation = map.getMyLocation();
         } else {
             Toast.makeText(this, "Error - Map was null!!", Toast.LENGTH_SHORT).show();
         }
@@ -226,6 +228,7 @@ public class MapActivity extends FragmentActivity implements
         // Connect the client.
         if (isGooglePlayServicesAvailable() && mGoogleApiClient != null) {
             mGoogleApiClient.connect();
+
         }
     }
 
@@ -317,12 +320,14 @@ public class MapActivity extends FragmentActivity implements
     public void onConnected(Bundle bundle) {
         // Display the connection status
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
         if (location != null) {
             Toast.makeText(this, "GPS location was found!", Toast.LENGTH_SHORT).show();
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17);
             map.animateCamera(cameraUpdate);
-            //startLocationUpdates();
+            //currentLocation = location;
+            startLocationUpdates();
         } else {
             Toast.makeText(this, "Current location was null, enable GPS on emulator!", Toast.LENGTH_SHORT).show();
         }
@@ -334,6 +339,9 @@ public class MapActivity extends FragmentActivity implements
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         mLocationRequest.setInterval(UPDATE_INTERVAL);
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                mLocationRequest, this);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         //LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, getIntent());
     }
 
@@ -373,7 +381,6 @@ public class MapActivity extends FragmentActivity implements
 
     }
 
-    @Override
     public void onLocationChanged(Location location) {
         // Report to the UI that the location was updated
         String msg = "Updated Location: " +
@@ -384,82 +391,30 @@ public class MapActivity extends FragmentActivity implements
         doMapQuery();
     }
 
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
-    @Override
-    public void onMapLongClick(LatLng latLng) {
-        Toast.makeText(this, "Long Press", Toast.LENGTH_LONG).show();
-        showAlertDialogForPoint(latLng);
-    }
-
-    // Display the alert that adds the marker
-    private void showAlertDialogForPoint(final LatLng point) {
-        // inflate message_item.xml view
-        View messageView = LayoutInflater.from(MapActivity.this).
-                inflate(R.layout.dialog_loc_detail, null);
-        // Create alert dialog builder
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-        // set message_item.xml to AlertDialog builder
-        alertDialogBuilder.setView(messageView);
-
-        // Create alert dialog
-        final AlertDialog alertDialog = alertDialogBuilder.create();
-
-        // Configure dialog button (OK)
-        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // Path to image file
-                        final String assetPath = "file:///storage/emulated/0/DCIM//Camera/20141008_095811.jpg";
-                        //File file = new File(filePath);
-                        // Define color of marker icon
-                        ImageSize targetSize = new ImageSize(80, 50);
-                        ImageLoader.getInstance().loadImage(assetPath, targetSize, new SimpleImageLoadingListener() {
-                            @Override
-                            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                                super.onLoadingComplete(imageUri, view, loadedImage);
-                                BitmapDescriptor defaultMarker =
-                                        BitmapDescriptorFactory.fromBitmap(loadedImage);
-                                String title = ((EditText) alertDialog.findViewById(R.id.etTitle)).
-                                        getText().toString();
-                                String snippet = ((EditText) alertDialog.findViewById(R.id.etSnippet)).
-                                        getText().toString();
-                                Marker marker = map.addMarker(new MarkerOptions()
-                                        .position(point)
-                                        .title(assetPath)
-                                        .snippet(snippet)
-                                        .icon(defaultMarker)
-                                        .draggable(true));
-                            }
-                        });
-
-                        //mClusterManager.addItem(new PinItem(point.latitude, point.longitude));
-                    }
-                });
-
-        // Configure dialog button (Cancel)
-        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) { dialog.cancel(); }
-                });
-
-        // Display the dialog
-        alertDialog.show();
-    }
+    // Function to display image as the marker on the map
+    /*// Path to image file
+    final String assetPath = "file:///storage/emulated/0/DCIM//Camera/20141008_095811.jpg";
+    //File file = new File(filePath);
+    // Define color of marker icon
+    ImageSize targetSize = new ImageSize(80, 50);
+    ImageLoader.getInstance().loadImage(assetPath, targetSize, new SimpleImageLoadingListener() {
+        @Override
+        public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+            super.onLoadingComplete(imageUri, view, loadedImage);
+            BitmapDescriptor defaultMarker =
+                    BitmapDescriptorFactory.fromBitmap(loadedImage);
+            String title = ((EditText) alertDialog.findViewById(R.id.etTitle)).
+                    getText().toString();
+            String snippet = ((EditText) alertDialog.findViewById(R.id.etSnippet)).
+                    getText().toString();
+            Marker marker = map.addMarker(new MarkerOptions()
+                    .position(point)
+                    .title(assetPath)
+                    .snippet(snippet)
+                    .icon(defaultMarker)
+                    .draggable(true));
+        }
+    });*/
 
     @Override
     public boolean onMarkerClick(Marker marker) {

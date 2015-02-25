@@ -8,10 +8,6 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
-/**
- * Created by keikha on 2/23/15.
- */
-
 @ParseClassName("Posts")
 public class GeoMessagePost extends ParseObject {
 

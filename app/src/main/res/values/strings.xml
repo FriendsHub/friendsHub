@@ -8,5 +8,6 @@
     <string name="facebook_app_id">331813253675002</string>
     <string name="title_activity_map">MapActivity</string>
     <string name="post">Post</string>
+    <string name="title_activity_post">PostActivity</string>
 
 </resources>
