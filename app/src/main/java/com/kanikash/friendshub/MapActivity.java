@@ -1,31 +1,26 @@
 package com.kanikash.friendshub;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.media.ExifInterface;
-import android.net.Uri;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -45,33 +40,21 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.plus.model.people.Person;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
-import com.google.maps.android.clustering.view.DefaultClusterRenderer;
-import com.google.maps.android.ui.IconGenerator;
 import com.kanikash.friendshub.Fragments.ImageFragment;
 import com.kanikash.friendshub.Models.Place;
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.nostra13.universalimageloader.core.assist.FailReason;
-import com.nostra13.universalimageloader.core.assist.ImageSize;
-import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
-import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+import com.kanikash.friendshub.Services.UploadImage;
 import com.parse.FindCallback;
 import com.parse.LogInCallback;
-import com.parse.Parse;
 import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
-import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
-
-import java.io.File;
-import java.io.IOException;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -79,7 +62,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class MapActivity extends FragmentActivity implements
+public class MapActivity extends ActionBarActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
@@ -87,7 +70,7 @@ public class MapActivity extends FragmentActivity implements
         ClusterManager.OnClusterClickListener,
         ClusterManager.OnClusterItemClickListener{
     private SupportMapFragment mapFragment;
-    private Button btn_post ;
+    //private Button btn_post ;
     private GoogleMap map;
     private GoogleApiClient mGoogleApiClient;
     private static String sUserId;
@@ -96,7 +79,6 @@ public class MapActivity extends FragmentActivity implements
     private final Map<String, Marker> mapMarkers = new HashMap<String, Marker>();
     private String selectedPostObjectId;
     private LocationRequest mLocationRequest;
-    private ImageLoaderConfiguration config;
     //private ClusterManager<PinItem> mClusterManager;
     private long UPDATE_INTERVAL = 60000;  /* 60 secs */
     private long FASTEST_INTERVAL = 5000; /* 5 secs */
@@ -127,16 +109,15 @@ public class MapActivity extends FragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+        getSupportActionBar().setTitle("Friends Hub");
 
-        config = new ImageLoaderConfiguration.Builder(this).build();
-        ImageLoader.getInstance().init(config);
         if (ParseUser.getCurrentUser() != null) { // start with existing user
             startWithCurrentUser();
         } else { // If not logged in, login as a new anonymous user
             login();
         }
 
-        btn_post = (Button) findViewById(R.id.btn_post);
+        /*btn_post = (Button) findViewById(R.id.btn_post);
         btn_post.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,7 +129,7 @@ public class MapActivity extends FragmentActivity implements
                 startActivity(intent);
 
             }
-        });
+        });*/
 
         mapFragment = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map));
         if (mapFragment != null) {
@@ -198,7 +179,7 @@ public class MapActivity extends FragmentActivity implements
         map = googleMap;
         if (map != null) {
             // Map is ready
-            Toast.makeText(this, "Map Fragment was loaded properly!", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "Map Fragment was loaded properly!", Toast.LENGTH_SHORT).show();
             //mClusterManager = new ClusterManager<PinItem>(this, map);
             //map.setOnMarkerClickListener(mClusterManager);
 
@@ -208,7 +189,7 @@ public class MapActivity extends FragmentActivity implements
             map.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
                 @Override
                 public void onCameraChange(CameraPosition cameraPosition) {
-                    doMapQuery();
+                    //doMapQuery();
                 }
             });
 
@@ -324,7 +305,7 @@ public class MapActivity extends FragmentActivity implements
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         if (location != null) {
-            Toast.makeText(this, "GPS location was found!", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "GPS location was found!", Toast.LENGTH_SHORT).show();
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17);
             map.animateCamera(cameraUpdate);
@@ -384,11 +365,6 @@ public class MapActivity extends FragmentActivity implements
     }
 
     public void onLocationChanged(Location location) {
-        // Report to the UI that the location was updated
-        String msg = "Updated Location: " +
-                Double.toString(location.getLatitude()) + "," +
-                Double.toString(location.getLongitude());
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         currentLocation = location;
         doMapQuery();
     }
@@ -397,23 +373,47 @@ public class MapActivity extends FragmentActivity implements
     @Override
     public boolean onMarkerClick(Marker marker) {
         // Get the image path from the image title
-        String imagePath = marker.getTitle().toString();
-        // Show the image in the dialogFragment
+        final String imagePath = marker.getTitle().toString();
+        final String imageCaption = marker.getSnippet().toString();
+        // Load the bitmap of this image
+        /*Target loadTarget = new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+                // Show the dialog to display this image
+                showImageDialog(bitmap, imagePath);
+            }
+
+            @Override
+            public void onBitmapFailed(Drawable drawable) {
+                Log.d("INFO", "Failed in loading the bitmap");
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable drawable) {
+                Log.d("Info", "preparing to load");
+            }
+        };*/
         FragmentManager fm = getSupportFragmentManager();
-        ImageFragment imgFrag = ImageFragment.newInstance(imagePath);
+        ImageFragment imgFrag = ImageFragment.newInstance(imagePath, imageCaption);
         imgFrag.show(fm, "img_show");
+        //Picasso.with(getBaseContext()).load(imagePath).into(loadTarget);
         return true;
+    }
+
+    private void showImageDialog(Bitmap bmp, String imagePath) {
+        // Show the image in the dialogFragment
+
     }
 
     @Override
     public boolean onClusterClick(Cluster cluster) {
-        Toast.makeText(getBaseContext(), "Kanika", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getBaseContext(), "Kanika", Toast.LENGTH_SHORT).show();
         return true;
     }
 
     @Override
     public boolean onClusterItemClick(ClusterItem clusterItem) {
-        Toast.makeText(getBaseContext(), "pin clicked", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getBaseContext(), "pin clicked", Toast.LENGTH_SHORT).show();
         return false;
     }
 
@@ -495,7 +495,7 @@ public class MapActivity extends FragmentActivity implements
                 // Posts to show on the map
                 Set<String> toKeep = new HashSet<String>();
                 // Loop through the results of the search
-                for (Place post : objects) {
+                for (final Place post : objects) {
                     // Add this post to the list of map pins to keep
                     toKeep.add(post.getObjectId());
                     // Check for an existing marker for this post
@@ -528,10 +528,28 @@ public class MapActivity extends FragmentActivity implements
 //                            marker.showInfoWindow();
 //                            selectedPostObjectId = null;
 //                        }
-
                         final String path = post.getPhotoFile().getUrl();
-                        ImageSize targetSize = new ImageSize(80, 50);
-                        ImageLoader.getInstance().loadImage(path, targetSize, imageLoadingListener(post, path));
+                        Target loadtarget;
+                        loadtarget = new Target() {
+                            @Override
+                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+                                LoadImagePicasso(bitmap, post, path);
+                            }
+
+                            @Override
+                            public void onBitmapFailed(Drawable drawable) {
+
+                            }
+
+                            @Override
+                            public void onPrepareLoad(Drawable drawable) {
+
+                            }
+                        };
+                        Picasso.with(getBaseContext())
+                                .load(path)
+                                .resize(100, 100)
+                                .into(loadtarget);
 
                     } else {
                         // Check for an existing in range marker
@@ -546,8 +564,27 @@ public class MapActivity extends FragmentActivity implements
                         }
                         // Display image marker of size 80*50
                         final String path = post.getPhotoFile().getUrl();
-                        ImageSize targetSize = new ImageSize(80, 50);
-                        ImageLoader.getInstance().loadImage(path, targetSize, imageLoadingListener(post, path));
+                        Target loadtarget;
+                        loadtarget = new Target() {
+                            @Override
+                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+                                LoadImagePicasso(bitmap, post, path);
+                            }
+
+                            @Override
+                            public void onBitmapFailed(Drawable drawable) {
+
+                            }
+
+                            @Override
+                            public void onPrepareLoad(Drawable drawable) {
+
+                            }
+                        };
+                        Picasso.with(getBaseContext())
+                                .load(path)
+                                .resize(100, 100)
+                                .into(loadtarget);
                     }
                 }
                 // Clean up old markers.
@@ -556,25 +593,47 @@ public class MapActivity extends FragmentActivity implements
         });
     }
 
-    public SimpleImageLoadingListener imageLoadingListener (final Place place, final String path) {
-        return new SimpleImageLoadingListener() {
-            @Override
-            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                super.onLoadingComplete(imageUri, view, loadedImage);
-                BitmapDescriptor defaultMarker = BitmapDescriptorFactory.fromBitmap(loadedImage);
-                MarkerOptions markerOpts = new MarkerOptions().position(new LatLng(place.getLocation().getLatitude(), place.getLocation().getLongitude()));
-                markerOpts = markerOpts.title(path)
-                                        .snippet("Random Snippet")
-                                        .icon(defaultMarker);
-                // Add a new marker
-                Marker marker = mapFragment.getMap().addMarker(markerOpts);
-                mapMarkers.put(place.getObjectId(), marker);
-                if (place.getObjectId().equals(selectedPostObjectId)) {
-                    marker.showInfoWindow();
-                    selectedPostObjectId = null;
-                }
-            }
-        };
+    public void LoadImagePicasso(Bitmap bmp, Place place, String path) {
+        BitmapDescriptor defaultMarker = BitmapDescriptorFactory.fromBitmap(bmp);
+        MarkerOptions markerOpts = new MarkerOptions().position(new LatLng(place.getLocation().getLatitude(), place.getLocation().getLongitude()));
+        markerOpts = markerOpts.title(path)
+                .snippet(place.getCaption())
+                .icon(defaultMarker);
+        // Add a new marker
+        Marker marker = mapFragment.getMap().addMarker(markerOpts);
+        mapMarkers.put(place.getObjectId(), marker);
+        if (place.getObjectId().equals(selectedPostObjectId)) {
+            marker.showInfoWindow();
+            selectedPostObjectId = null;
+        }
     }
 
+    private BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int resultCode = intent.getIntExtra("resultCode", RESULT_CANCELED);
+            String resultValue = intent.getStringExtra("resultValue");
+            Toast.makeText(getBaseContext(), resultValue, Toast.LENGTH_LONG).show();
+        }
+    };
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(serviceReceiver);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter(UploadImage.ACTION);
+        LocalBroadcastManager.getInstance(this).registerReceiver(serviceReceiver, filter);
+    }
+
+    public void capture(MenuItem mi) {
+        Intent intent = new Intent(MapActivity.this, AddMomentsActivity.class);
+        //Intent intent = new Intent(MapActivity.this, PostActivity.class);
+        intent.putExtra("Location", currentLocation);
+        startActivity(intent);
+    }
 }

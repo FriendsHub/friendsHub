@@ -23,6 +23,7 @@ public class MainActivity extends ActionBarActivity implements LoginFragment.OnS
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().setTitle("Friends Hub");
         if(savedInstanceState == null) {
             loginFragment = new LoginFragment();
             FragmentManager fm = getSupportFragmentManager();
@@ -51,11 +52,6 @@ public class MainActivity extends ActionBarActivity implements LoginFragment.OnS
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }

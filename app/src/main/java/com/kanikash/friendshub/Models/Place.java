@@ -30,13 +30,13 @@ public class Place extends ParseObject {
         put("caption", caption);
     }
 
-    public ParseUser getAuthor() {
+    /*public ParseUser getAuthor() {
         return getParseUser("author");
     }
 
     public void setAuthor(ParseUser user) {
         put("author", user);
-    }
+    }*/
 
     public ParseFile getPhotoFile() {
         return getParseFile("photo");

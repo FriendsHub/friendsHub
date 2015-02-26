@@ -4,13 +4,17 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,15 +25,19 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.kanikash.friendshub.Models.Place;
+import com.kanikash.friendshub.Services.UploadImage;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseImageView;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 
 
 public class AddMomentsActivity extends ActionBarActivity {
@@ -46,17 +54,17 @@ public class AddMomentsActivity extends ActionBarActivity {
     private Button btSave;
     private ParseImageView pivPreview;
     private Button btCancel;
+    private int width;
+    private int height;
+    private Bitmap bitmapR;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         place = new Place();
-
-        // We don't need action bar here
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_moments);
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getSupportActionBar().setTitle("Moment");
         loc = getIntent().getParcelableExtra("Location");
         if(loc != null)
             geoPoint = new ParseGeoPoint(loc.getLatitude(), loc.getLongitude());
@@ -77,8 +85,11 @@ public class AddMomentsActivity extends ActionBarActivity {
     private void setupViews() {
         etCaption = (EditText) findViewById(R.id.etCaption);
         pivPreview = (ParseImageView) findViewById(R.id.pivPreview);
-        btSave = (Button) findViewById(R.id.btSave);
-        btCancel = (Button) findViewById(R.id.btCancel);
+        //btSave = (Button) findViewById(R.id.btSave);
+        Display mDisplay = getWindowManager().getDefaultDisplay();
+        width  = mDisplay.getWidth();
+        height = mDisplay.getHeight();
+        //btCancel = (Button) findViewById(R.id.btCancel);
 
     }
 
@@ -111,11 +122,6 @@ public class AddMomentsActivity extends ActionBarActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
     @Override
@@ -130,62 +136,65 @@ public class AddMomentsActivity extends ActionBarActivity {
     }
 
     private void handlePhotoResult() {
-        Uri takenPhotoUri = getPhotoFileUri(photoFileName);
-        // by this point we have photo on disk
-        Bitmap takenImage = BitmapFactory.decodeFile(takenPhotoUri.getPath());
-
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        takenImage.compress(Bitmap.CompressFormat.JPEG, 100, bos);
-
-        byte[] imageByteData = bos.toByteArray();
-
-        // TODO: Scale the image:
-        photoFile = new ParseFile(photoFileName, imageByteData);
-        photoFile.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                if (e != null) {
-                    Toast.makeText(AddMomentsActivity.this,
-                            "Error saving: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                } else {
-                    addPhotoToPlace(photoFile);
-                }
-            }
-        });
         // Load the taken image into a preview
-        pivPreview.setParseFile(photoFile);
-        pivPreview.loadInBackground();
-    }
-
-    private void addPhotoToPlace(ParseFile photoFile) {
-        place.setPhotoFile(photoFile);
-    }
-
-    public void onSave(View view) {
-        place.setCaption(etCaption.getText().toString());
-        place.setAuthor(ParseUser.getCurrentUser());
-        place.setLocation(geoPoint);
-
-        place.saveInBackground( new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                if(e == null) {
-                    AddMomentsActivity.this.setResult(Activity.RESULT_OK);
-                    AddMomentsActivity.this.finish();
-                }
-                else {
-                    Toast.makeText(AddMomentsActivity.this.getApplicationContext(),
-                            "Error saving: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                }
-            }
-        });
+        // Display image in the image preview
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        Bitmap bmp = BitmapFactory.decodeFile(getPhotoFileUri(photoFileName).getPath(), options);
+        options.inSampleSize = CalculateInSampleSize(options, width, height);
+        options.inJustDecodeBounds = false;
+        Bitmap bitmap = BitmapFactory.decodeFile(getPhotoFileUri(photoFileName).getPath(), options);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        bitmapR = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        bitmap.recycle();
+        bitmap = null;
+        pivPreview.setImageBitmap(bitmapR);
+        /*pivPreview.setParseFile(photoFile);
+        pivPreview.loadInBackground();*/
     }
 
     public void onCancel(View view) {
         this.setResult(Activity.RESULT_CANCELED);
         this.finish();
+    }
+
+    public void onSave(MenuItem mi) {
+        bitmapR.recycle();
+        bitmapR = null;
+        Uri takenPhotoUri = getPhotoFileUri(photoFileName);
+        // Create the service Intent
+        Intent i = new Intent(this, UploadImage.class);
+        i.putExtra("image_path", takenPhotoUri.toString());
+        i.putExtra("image_caption", etCaption.getText().toString());
+        i.putExtra("location", loc);
+        i.putExtra("display_width", width);
+        i.putExtra("display_height", height);
+        startService(i);
+
+        this.finish();
+    }
+
+    public static int CalculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight){
+        reqWidth = reqWidth - 200;
+        reqHeight = reqHeight - 200;
+        // Raw height and width of image
+        float height = options.outHeight;
+        float width = options.outWidth;
+        double inSampleSize = 1D;
+
+        if (height > reqHeight || width > reqWidth)
+        {
+            int halfHeight = (int)(height / 2);
+            int halfWidth = (int)(width / 2);
+
+            // Calculate a inSampleSize that is a power of 2 - the decoder will use a value that is a power of two anyway.
+            while ((halfHeight / inSampleSize) > reqHeight && (halfWidth / inSampleSize) > reqWidth)
+            {
+                inSampleSize *= 2;
+            }
+        }
+        return (int)inSampleSize;
     }
 
 }
