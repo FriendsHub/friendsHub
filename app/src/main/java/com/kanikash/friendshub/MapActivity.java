@@ -518,16 +518,20 @@ public class MapActivity extends FragmentActivity implements
                             }
                         }
                         // Display a red marker with a predefined title and no snippet
-                        markerOpts =
-                                markerOpts.title(post.getCaption()).icon(
-                                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                        // Add a new marker
-                        Marker marker = mapFragment.getMap().addMarker(markerOpts);
-                        mapMarkers.put(post.getObjectId(), marker);
-                        if (post.getObjectId().equals(selectedPostObjectId)) {
-                            marker.showInfoWindow();
-                            selectedPostObjectId = null;
-                        }
+//                        markerOpts =
+//                                markerOpts.title(post.getCaption()).icon(
+//                                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+//                        // Add a new marker
+//                        Marker marker = mapFragment.getMap().addMarker(markerOpts);
+//                        mapMarkers.put(post.getObjectId(), marker);
+//                        if (post.getObjectId().equals(selectedPostObjectId)) {
+//                            marker.showInfoWindow();
+//                            selectedPostObjectId = null;
+//                        }
+
+                        final String path = post.getPhotoFile().getUrl();
+                        ImageSize targetSize = new ImageSize(80, 50);
+                        ImageLoader.getInstance().loadImage(path, targetSize, imageLoadingListener(post, path));
 
                     } else {
                         // Check for an existing in range marker
