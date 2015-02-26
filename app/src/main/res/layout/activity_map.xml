@@ -3,13 +3,6 @@
     android:layout_height="match_parent"
     tools:context="com.kanikash.friendshub.MapActivity">
 
-    <Button
-        android:id="@+id/btn_post"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/post"
-        android:textAppearance="?android:attr/textAppearanceSmallInverse" />
-
     <fragment
         android:id="@+id/map"
         class="com.google.android.gms.maps.SupportMapFragment"
@@ -19,7 +12,6 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btn_post"/>
+        android:layout_height="wrap_content"/>
 
 </RelativeLayout>

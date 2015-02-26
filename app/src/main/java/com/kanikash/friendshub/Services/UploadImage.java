@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.location.Location;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
@@ -46,10 +47,15 @@ public class UploadImage extends IntentService {
         options.inSampleSize = CalculateInSampleSize(options, display_width, display_height);
         options.inJustDecodeBounds = false;
         Bitmap bitmap = BitmapFactory.decodeFile(Uri.parse(imgPath).getPath(), options);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        Bitmap bitmapR = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         bitmap.recycle();
         bitmap = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bitmapR.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+        bitmapR.recycle();
+        bitmapR = null;
         byte[] imageByteData = bos.toByteArray();
 
         final ParseFile file = new ParseFile("MomentsPhoto.jpg", imageByteData);

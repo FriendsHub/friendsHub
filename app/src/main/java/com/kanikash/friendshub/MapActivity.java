@@ -15,6 +15,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -61,7 +62,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class MapActivity extends FragmentActivity implements
+public class MapActivity extends ActionBarActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
@@ -69,7 +70,7 @@ public class MapActivity extends FragmentActivity implements
         ClusterManager.OnClusterClickListener,
         ClusterManager.OnClusterItemClickListener{
     private SupportMapFragment mapFragment;
-    private Button btn_post ;
+    //private Button btn_post ;
     private GoogleMap map;
     private GoogleApiClient mGoogleApiClient;
     private static String sUserId;
@@ -108,6 +109,7 @@ public class MapActivity extends FragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+        getSupportActionBar().setTitle("Friends Hub");
 
         if (ParseUser.getCurrentUser() != null) { // start with existing user
             startWithCurrentUser();
@@ -115,7 +117,7 @@ public class MapActivity extends FragmentActivity implements
             login();
         }
 
-        btn_post = (Button) findViewById(R.id.btn_post);
+        /*btn_post = (Button) findViewById(R.id.btn_post);
         btn_post.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -127,7 +129,7 @@ public class MapActivity extends FragmentActivity implements
                 startActivity(intent);
 
             }
-        });
+        });*/
 
         mapFragment = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map));
         if (mapFragment != null) {
@@ -372,6 +374,7 @@ public class MapActivity extends FragmentActivity implements
     public boolean onMarkerClick(Marker marker) {
         // Get the image path from the image title
         final String imagePath = marker.getTitle().toString();
+        final String imageCaption = marker.getSnippet().toString();
         // Load the bitmap of this image
         /*Target loadTarget = new Target() {
             @Override
@@ -391,7 +394,7 @@ public class MapActivity extends FragmentActivity implements
             }
         };*/
         FragmentManager fm = getSupportFragmentManager();
-        ImageFragment imgFrag = ImageFragment.newInstance(imagePath);
+        ImageFragment imgFrag = ImageFragment.newInstance(imagePath, imageCaption);
         imgFrag.show(fm, "img_show");
         //Picasso.with(getBaseContext()).load(imagePath).into(loadTarget);
         return true;
@@ -525,10 +528,28 @@ public class MapActivity extends FragmentActivity implements
 //                            marker.showInfoWindow();
 //                            selectedPostObjectId = null;
 //                        }
-
                         final String path = post.getPhotoFile().getUrl();
-                        ImageSize targetSize = new ImageSize(80, 50);
-                        ImageLoader.getInstance().loadImage(path, targetSize, imageLoadingListener(post, path));
+                        Target loadtarget;
+                        loadtarget = new Target() {
+                            @Override
+                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+                                LoadImagePicasso(bitmap, post, path);
+                            }
+
+                            @Override
+                            public void onBitmapFailed(Drawable drawable) {
+
+                            }
+
+                            @Override
+                            public void onPrepareLoad(Drawable drawable) {
+
+                            }
+                        };
+                        Picasso.with(getBaseContext())
+                                .load(path)
+                                .resize(100, 100)
+                                .into(loadtarget);
 
                     } else {
                         // Check for an existing in range marker
@@ -562,7 +583,7 @@ public class MapActivity extends FragmentActivity implements
                         };
                         Picasso.with(getBaseContext())
                                 .load(path)
-                                .resize(50, 80)
+                                .resize(100, 100)
                                 .into(loadtarget);
                     }
                 }
@@ -576,7 +597,7 @@ public class MapActivity extends FragmentActivity implements
         BitmapDescriptor defaultMarker = BitmapDescriptorFactory.fromBitmap(bmp);
         MarkerOptions markerOpts = new MarkerOptions().position(new LatLng(place.getLocation().getLatitude(), place.getLocation().getLongitude()));
         markerOpts = markerOpts.title(path)
-                .snippet("Random Snippet")
+                .snippet(place.getCaption())
                 .icon(defaultMarker);
         // Add a new marker
         Marker marker = mapFragment.getMap().addMarker(markerOpts);
@@ -607,5 +628,12 @@ public class MapActivity extends FragmentActivity implements
         super.onResume();
         IntentFilter filter = new IntentFilter(UploadImage.ACTION);
         LocalBroadcastManager.getInstance(this).registerReceiver(serviceReceiver, filter);
+    }
+
+    public void capture(MenuItem mi) {
+        Intent intent = new Intent(MapActivity.this, AddMomentsActivity.class);
+        //Intent intent = new Intent(MapActivity.this, PostActivity.class);
+        intent.putExtra("Location", currentLocation);
+        startActivity(intent);
     }
 }
