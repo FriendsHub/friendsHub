@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Environment;
@@ -11,6 +12,7 @@ import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,12 +23,15 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.kanikash.friendshub.Models.Place;
+import com.kanikash.friendshub.Services.UploadImage;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseImageView;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -130,11 +135,85 @@ public class AddMomentsActivity extends ActionBarActivity {
     }
 
     private void handlePhotoResult() {
-        Uri takenPhotoUri = getPhotoFileUri(photoFileName);
-        // by this point we have photo on disk
-        Bitmap takenImage = BitmapFactory.decodeFile(takenPhotoUri.getPath());
+        //Uri takenPhotoUri = getPhotoFileUri(photoFileName);
+        /*Display mDisplay = getWindowManager().getDefaultDisplay();
+        final int width  = mDisplay.getWidth();
+        final int height = mDisplay.getHeight();
+        Create the service Intent
+        Intent i = new Intent(this, UploadImage.class);
+        i.putExtra("image_path", takenPhotoUri.toString());
+        i.putExtra("image_caption", etCaption.getText().toString());
+        i.putExtra("location", loc);
+        startService(i);*//*
 
+        // by this point we have photo on disk
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        Bitmap bmp = BitmapFactory.decodeFile(takenPhotoUri.getPath(), options);
+        options.inSampleSize = CalculateInSampleSize(options, width, height);
+        options.inJustDecodeBounds = false;
+
+        Bitmap bitmap = BitmapFactory.decodeFile(takenPhotoUri.getPath(), options);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+        byte[] imageByteData = bos.toByteArray();
+
+        final ParseFile file = new ParseFile(photoFileName, imageByteData);
+        file.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e != null) {
+                    Toast.makeText(AddMomentsActivity.this,
+                            "Error saving: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                } else {
+                    addPhotoToPlace(photoFile);
+                }
+            }
+        });*/
+
+        /*Target loadTarget = new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+
+                byte[] imageByteData = bos.toByteArray();
+
+                // TODO: Scale the image:
+                photoFile = new ParseFile(photoFileName, imageByteData);
+                photoFile.saveInBackground(new SaveCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        if (e != null) {
+                            Toast.makeText(AddMomentsActivity.this,
+                                    "Error saving: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        } else {
+                            addPhotoToPlace(photoFile);
+                        }
+                    }
+                });
+                // Load the taken image into a preview
+                pivPreview.setParseFile(photoFile);
+                pivPreview.loadInBackground();
+            }
+
+            @Override
+            public void onBitmapFailed(Drawable drawable) {
+
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable drawable) {
+
+            }
+        };
+        Picasso.with(getBaseContext()).load(takenPhotoUri).into(loadTarget);
+        pivPreview.setTag(loadTarget);*/
+        //Bitmap takenImage = BitmapFactory.decodeFile(takenPhotoUri.getPath());
+
+        /*ByteArrayOutputStream bos = new ByteArrayOutputStream();
         takenImage.compress(Bitmap.CompressFormat.JPEG, 100, bos);
 
         byte[] imageByteData = bos.toByteArray();
@@ -152,19 +231,20 @@ public class AddMomentsActivity extends ActionBarActivity {
                     addPhotoToPlace(photoFile);
                 }
             }
-        });
+        });*/
+
         // Load the taken image into a preview
-        pivPreview.setParseFile(photoFile);
-        pivPreview.loadInBackground();
+        /*pivPreview.setParseFile(photoFile);
+        pivPreview.loadInBackground();*/
     }
 
-    private void addPhotoToPlace(ParseFile photoFile) {
+    /*private void addPhotoToPlace(ParseFile photoFile) {
         place.setPhotoFile(photoFile);
     }
 
     public void onSave(View view) {
         place.setCaption(etCaption.getText().toString());
-        place.setAuthor(ParseUser.getCurrentUser());
+        //place.setAuthor(ParseUser.getCurrentUser());
         place.setLocation(geoPoint);
 
         place.saveInBackground( new SaveCallback() {
@@ -185,6 +265,46 @@ public class AddMomentsActivity extends ActionBarActivity {
 
     public void onCancel(View view) {
         this.setResult(Activity.RESULT_CANCELED);
+        this.finish();
+    }*/
+
+    /*public static int CalculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight)
+    {
+        reqWidth = reqWidth - 200;
+        reqHeight = reqHeight - 200;
+        // Raw height and width of image
+        float height = options.outHeight;
+        float width = options.outWidth;
+        double inSampleSize = 1D;
+
+        if (height > reqHeight || width > reqWidth)
+        {
+            int halfHeight = (int)(height / 2);
+            int halfWidth = (int)(width / 2);
+
+            // Calculate a inSampleSize that is a power of 2 - the decoder will use a value that is a power of two anyway.
+            while ((halfHeight / inSampleSize) > reqHeight && (halfWidth / inSampleSize) > reqWidth)
+            {
+                inSampleSize *= 2;
+            }
+        }
+
+        return (int)inSampleSize;
+    }*/
+
+    public void onSave(View v) {
+        Display mDisplay = getWindowManager().getDefaultDisplay();
+        final int width  = mDisplay.getWidth();
+        final int height = mDisplay.getHeight();
+        Uri takenPhotoUri = getPhotoFileUri(photoFileName);
+        // Create the service Intent
+        Intent i = new Intent(this, UploadImage.class);
+        i.putExtra("image_path", takenPhotoUri.toString());
+        i.putExtra("image_caption", etCaption.getText().toString());
+        i.putExtra("location", loc);
+        i.putExtra("display_width", width);
+        i.putExtra("display_height", height);
+        startService(i);
         this.finish();
     }
 
